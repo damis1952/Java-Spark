@@ -1,1 +1,64 @@
 Télécharger et installer Java Spark sur une machine virtuelle Ubuntu
+  Mise à du système
+      sudo apt update
+      sudo apt -y upgrade
+  Pour savoir si votre machine dispose de Java
+      java
+  Sinon
+      sudo apt install openjdk-8-jre-headless
+      sudo apt install openjdk-8-jdk-headless
+  Verifier la version
+      java --version
+  Installation de maven
+      sudo apt install maven
+      mvn -version
+  Installation de spark
+      wget https://dst-de.s3.eu-west-3.amazonaws.com/java_spark_fr/spark-3.3.0-bin-hadoop3.tgz
+      tar xvf spark-3.3.0-bin-hadoop3.tgz 
+      sudo mv spark-3.3.0-bin-hadoop3/ /opt/spark 
+   Ajouter dans .bashrc
+       export SPARK_HOME=/opt/spark
+       export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+       
+       source ~/.bashrc 
+Ecriture d'un programme Java Spark
+création du dossier
+        - FOLDER/pom.xml
+        - FOLDER/src
+        - FOLDER/src/main
+        - FOLDER/src/main/java
+        - FOLDER/src/main/java/SimpleApp.java
+        
+ Télécharger le pom.xml
+        - wget https://dst-de.s3.eu-west-3.amazonaws.com/java_spark_fr/pom.xml
+ fichier SimpleApp.java
+            
+            /* SimpleApp.java */
+            import org.apache.spark.sql.SparkSession;
+            import org.apache.spark.sql.Dataset;
+
+            public class SimpleApp {
+              public static void main(String[] args) {
+                String logFile = "/opt/spark/README.md"; // le fichier que l'on veut lire
+                SparkSession spark = SparkSession.builder().appName("Simple Application").getOrCreate();
+                spark.sparkContext().setLogLevel("ERROR");
+                Dataset<String> logData = spark.read().textFile(logFile).cache();
+
+                long numAs = logData.filter(s -> s.contains("a")).count();
+                long numBs = logData.filter(s -> s.contains("b")).count();
+
+                System.out.println("Lignes avec a: " + numAs + ", lignes avec b: " + numBs);
+
+                spark.stop();
+              }
+            }
+            
+            
+   Ajouter au fichier /opt/spark/conf/log4j2.properties.template
+          - rootLogger.level = error
+   Renommer le fichier en /opt/spark/conf/log4j2.properties
+          - mv /opt/spark/conf/log4j2.properties.template /opt/spark/conf/log4j2.properties
+   Pour compiler le programme:
+           - cd FOLDER
+           - mvn package
+           - /opt/spark/bin/spark-submit --class "SimpleApp" --master local[4] target/simple-project-1.0.jar
